@@ -19,13 +19,14 @@ export default function AuthModal({ onSuccess }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
     setError("");
     try {
-      await api.post("/auth/send-otp", { email });
+      // 👈 Render backend illama Vercel Next.js direct API-ku call pogum
+      await axios.post("/api/send-otp", { email });
       setStep("OTP");
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
