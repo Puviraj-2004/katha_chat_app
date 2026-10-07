@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #0084FF;
+  --color-brand-accent: #00D2FF;
+  --color-brand-navy: #0B1736;
+
+  --color-dark-bg: #080D1A;
+  --color-dark-surface: #10192D;
+  --color-dark-border: #1B2A4A;
+  --color-dark-bubble: #16223D;
+
+  --color-light-bg: #F8FAFC;
+  --color-light-surface: #FFFFFF;
+  --color-light-border: #E2E8F0;
+  --color-light-bubble: #F1F5F9;
+}
+
+:root {
+  --app-bg: #F8FAFC;
+  --app-surface: #FFFFFF;
+  --app-text: #0B1736;
+  --app-border: #E2E8F0;
+  --app-bubble-in: #F1F5F9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app-bg: #080D1A;
+    --app-surface: #10192D;
+    --app-text: #FFFFFF;
+    --app-border: #1B2A4A;
+    --app-bubble-in: #16223D;
+  }
+}
+
+body {
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  overflow-x: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Dynamic Viewport Height for Mobile PWA */
+.h-mobile-screen {
+  height: 100dvh;
+}
