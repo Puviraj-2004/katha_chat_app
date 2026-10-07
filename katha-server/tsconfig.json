@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    
+    /* Intha 2 lines thaan unwanted .js files-ai thadukkum */
+    "outDir": "./dist",
+    "noEmit": true
+  },
+  "include": ["src/**/*"]
+}
