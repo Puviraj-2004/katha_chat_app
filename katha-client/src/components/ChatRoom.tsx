@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   Ban,
 } from "lucide-react";
+import Image from "next/image";
 
 interface ChatRoomProps {
   chat: ChatListItem;
@@ -30,6 +31,7 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
   const [isTyping, setIsTyping] = useState(false);
   const [partnerOnline, setPartnerOnline] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
   // Keyboard-aware viewport height (fixes input/header lifting on mobile)
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
@@ -288,9 +290,14 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand/10 text-sm font-bold text-brand">
-              {chat.avatarUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={chat.avatarUrl} alt="" className="w-full h-full object-cover" />
+              {chat.avatarUrl && failedAvatarUrl !== chat.avatarUrl ? (
+                
+                <Image
+                  src={chat.avatarUrl}
+                  alt={`${currentDisplayName}'s profile photo`}
+                  className="w-full h-full object-cover"
+                  onError={() => setFailedAvatarUrl(chat.avatarUrl!)}
+                />
               ) : (
                 currentDisplayName.charAt(0).toUpperCase()
               )}
