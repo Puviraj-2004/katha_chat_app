@@ -31,12 +31,15 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
   const [partnerOnline, setPartnerOnline] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Keyboard-aware viewport height (fixes input/header lifting on mobile)
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
   // Unknown Contact & Block States
   const [currentDisplayName, setCurrentDisplayName] = useState(chat.displayName);
-  const [isSaved, setIsSaved] = useState(chat.isSaved ?? (chat.displayName !== chat.email));
+  const [isSaved, setIsSaved] = useState(chat.isSaved ?? chat.displayName !== chat.email);
   const [isBlocked, setIsBlocked] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
-  const [messageToDelete, setMessageToDelete] = useState<string | null>(null); // 👈 Add this state
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [showAddPrompt, setShowAddPrompt] = useState(false);
   const [customNameInput, setCustomNameInput] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -50,6 +53,27 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
     const container = messagesContainerRef.current;
     container?.scrollTo({ top: container.scrollHeight, behavior });
   };
+
+  // Track the visible viewport (shrinks when the keyboard opens)
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const update = () => {
+      setViewportHeight(vv.height);
+      // Stop the browser from pushing the whole page up
+      window.scrollTo(0, 0);
+      requestAnimationFrame(() => scrollToBottom("auto"));
+    };
+
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -158,9 +182,11 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
     };
 
     setMessagesList((prev) => [...prev, optimisticMessage]);
-    if (type === "TEXT") 
-    setInputText("");
-    inputRef.current?.focus();
+
+    if (type === "TEXT") {
+      setInputText("");
+      inputRef.current?.focus(); // keep keyboard open after sending
+    }
 
     socket.emit(
       "send_message",
@@ -173,9 +199,7 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
       },
       (res: { success?: boolean; message?: Message; error?: string }) => {
         if (res?.success && res.message) {
-          setMessagesList((prev) =>
-            prev.map((m) => (m.id === tempId ? res.message! : m))
-          );
+          setMessagesList((prev) => prev.map((m) => (m.id === tempId ? res.message! : m)));
         }
       }
     );
@@ -201,6 +225,8 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
       console.error("Upload error", err);
     } finally {
       setUploadingImage(false);
+      // allow picking the same file again
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -224,7 +250,7 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
       });
       setIsSaved(true);
       setShowAddPrompt(false);
-      setCurrentDisplayName(customNameInput); // 👈 Prop mutate pannama state update panrom
+      setCurrentDisplayName(customNameInput);
     } catch (err) {
       console.error(err);
     } finally {
@@ -246,54 +272,55 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-(--app-bg)">
+    <div
+      style={{ height: viewportHeight ? `${viewportHeight}px` : "100dvh" }}
+      className="flex min-h-0 flex-col overflow-hidden bg-(--app-bg)"
+    >
       {/* Fixed WhatsApp-style chat header */}
       <header className="sticky top-0 z-20 shrink-0 border-b border-(--app-border) bg-(--app-surface) shadow-sm">
         <div className="flex min-h-16 items-center justify-between gap-2 px-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <button
-            onClick={() => {
-              onBack();
-            }}
-            className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-black/5 hover:text-(--app-text) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:text-slate-300 dark:hover:bg-white/10"
-            aria-label="Back to chats"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand/10 text-sm font-bold text-brand">
-            {chat.avatarUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={chat.avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              currentDisplayName.charAt(0).toUpperCase()
-            )}
-          </div>
-          <div className="min-w-0">
-            <h4 className="truncate font-bold text-sm leading-tight">{currentDisplayName}</h4>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  partnerOnline ? "bg-brand-accent animate-pulse" : "bg-slate-500"
-                }`}
-              />
-              <span className="text-[10px] text-slate-400">
-                {isTyping ? "typing..." : partnerOnline ? "Online" : "Offline"}
-              </span>
+          <div className="flex min-w-0 items-center gap-2">
+            <button
+              onClick={onBack}
+              className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-black/5 hover:text-(--app-text) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:text-slate-300 dark:hover:bg-white/10"
+              aria-label="Back to chats"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand/10 text-sm font-bold text-brand">
+              {chat.avatarUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={chat.avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                currentDisplayName.charAt(0).toUpperCase()
+              )}
+            </div>
+            <div className="min-w-0">
+              <h4 className="truncate font-bold text-sm leading-tight">{currentDisplayName}</h4>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    partnerOnline ? "bg-brand-accent animate-pulse" : "bg-slate-500"
+                  }`}
+                />
+                <span className="text-[10px] text-slate-400">
+                  {isTyping ? "typing..." : partnerOnline ? "Online" : "Offline"}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Header action remains visible while the messages scroll. */}
+          {/* Header action remains visible while the messages scroll. */}
           {!isBlocked && (
-          <button
-            onClick={() => setShowBlockModal(true)} // 👈 Open modern modal
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-red-500/10 hover:text-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:text-slate-300"
-            aria-label={`Block ${currentDisplayName}`}
-            title="Block user"
-          >
-            <Ban className="w-5 h-5" />
-          </button>
-        )}
+            <button
+              onClick={() => setShowBlockModal(true)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-red-500/10 hover:text-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:text-slate-300"
+              aria-label={`Block ${currentDisplayName}`}
+              title="Block user"
+            >
+              <Ban className="w-5 h-5" />
+            </button>
+          )}
         </div>
       </header>
 
@@ -331,7 +358,7 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
           ) : (
             <div className="flex items-center justify-end gap-2 mt-1">
               <button
-                onClick={() => setShowBlockModal(true)} // 👈 Open modern modal
+                onClick={() => setShowBlockModal(true)}
                 disabled={actionLoading}
                 className="px-3 py-1 text-xs text-red-400 bg-red-500/10 rounded-lg hover:bg-red-500/20 font-medium transition"
               >
@@ -358,8 +385,11 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
         </div>
       )}
 
-{/* Messages Feed */}
-      <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto p-4 space-y-3">
+      {/* Messages Feed */}
+      <div
+        ref={messagesContainerRef}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-3"
+      >
         {messagesList.map((m, idx) => {
           const isMe = m.senderId === currentUser.id;
 
@@ -444,9 +474,7 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
       {/* Input Bottom Bar (Disabled if Blocked) */}
       <div className="shrink-0 p-3 border-t border-(--app-border) bg-(--app-surface)">
         {isBlocked ? (
-          <div className="text-center py-2 text-xs text-slate-400">
-            Unblock to send messages
-          </div>
+          <div className="text-center py-2 text-xs text-slate-400">Unblock to send messages</div>
         ) : (
           <form
             onSubmit={(e) => {
@@ -461,7 +489,11 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
               disabled={uploadingImage}
               className="p-2.5 rounded-2xl bg-black/5 dark:bg-white/5 hover:text-brand transition"
             >
-              {uploadingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+              {uploadingImage ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <ImageIcon className="w-5 h-5" />
+              )}
             </button>
             <input
               type="file"
@@ -480,7 +512,9 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
               value={inputText}
               onChange={handleInputChange}
               onFocus={() => {
+                window.scrollTo(0, 0);
                 setTimeout(() => {
+                  window.scrollTo(0, 0);
                   scrollToBottom("auto");
                 }, 120);
               }}
@@ -489,8 +523,7 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
 
             <button
               type="submit"
-              onMouseDown={(e) => e.preventDefault()}
-              onTouchStart={(e) => e.preventDefault()} 
+              onMouseDown={(e) => e.preventDefault()} // keeps keyboard open on tap
               disabled={!inputText.trim()}
               className="p-2.5 rounded-2xl bg-brand text-white hover:opacity-90 active:scale-95 transition disabled:opacity-40"
             >
@@ -498,7 +531,9 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
             </button>
           </form>
         )}
-        {/* WhatsApp Style Clean Block Confirmation Modal */}
+      </div>
+
+      {/* Block Confirmation Modal */}
       {showBlockModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-xs p-5 rounded-3xl bg-(--app-surface) border border-(--app-border) shadow-2xl text-center">
@@ -530,7 +565,8 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
           </div>
         </div>
       )}
-      {/* WhatsApp Style Delete Message Confirmation Modal */}
+
+      {/* Delete Message Confirmation Modal */}
       {messageToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="w-full max-w-xs p-5 rounded-3xl bg-(--app-surface) border border-(--app-border) shadow-2xl text-center">
@@ -563,7 +599,6 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
