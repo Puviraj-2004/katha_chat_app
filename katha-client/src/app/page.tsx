@@ -9,12 +9,10 @@ import ChatList from "@/components/ChatList";
 import ChatRoom from "@/components/ChatRoom";
 import ProfileModal from "@/components/ProfileModal";
 import AddContactModal from "@/components/AddContactModal";
-import Image from "next/image";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
 
-  // Lazy load tokens synchronously from client storage
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("katha_token");
@@ -35,7 +33,6 @@ export default function Home() {
   const [showAddContact, setShowAddContact] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Safe client hydration mount
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
@@ -64,7 +61,40 @@ export default function Home() {
     setShowProfile(false);
   }, []);
 
-  // Socket Lifecycle & Initial Chat Fetch
+  // 👈 MOBILE HARDWARE BACK GESTURE HANDLER (App auto-close prevent pannum)
+  useEffect(() => {
+    const handlePopState = () => {
+      if (showAddContact) {
+        setShowAddContact(false);
+      } else if (showProfile) {
+        setShowProfile(false);
+      } else if (activeChat) {
+        setActiveChat(null);
+        loadChats();
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [activeChat, showAddContact, showProfile, loadChats]);
+
+  // Open Chat with Virtual History Entry
+  const handleSelectChat = (chat: ChatListItem) => {
+    setActiveChat(chat);
+    window.history.pushState({ view: "chat" }, "");
+  };
+
+  const handleOpenAddContact = () => {
+    setShowAddContact(true);
+    window.history.pushState({ view: "modal" }, "");
+  };
+
+  const handleOpenProfile = () => {
+    setShowProfile(true);
+    window.history.pushState({ view: "modal" }, "");
+  };
+
+  // Socket Lifecycle
   useEffect(() => {
     if (!currentUser?.id) return;
 
@@ -95,23 +125,19 @@ export default function Home() {
     };
   }, [currentUser?.id, handleLogout]);
 
-  // 1. Initial Match for Server & Client (Prevents Hydration Mismatch)
-if (!mounted) {
+  if (!mounted) {
     return (
       <main className="h-mobile-screen w-full max-w-md mx-auto flex items-center justify-center bg-(--app-bg)">
-      <Image
-        src="/katha.svg"
-        alt="katha logo"
-        width={32}
-        height={32}
-        loading="eager"
-        className="w-8 h-8 object-contain drop-shadow-sm"
-      />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/katha.svg"
+          alt="katha"
+          className="w-16 h-16 object-contain animate-pulse drop-shadow-[0_0_20px_rgba(0,132,255,0.4)]"
+        />
       </main>
     );
   }
 
-  // 2. Auth Gate
   if (!token || !currentUser) {
     return (
       <AuthModal
@@ -123,7 +149,6 @@ if (!mounted) {
     );
   }
 
-  // 3. Main App UI
   return (
     <main className="h-mobile-screen w-full max-w-md mx-auto relative overflow-hidden bg-(--app-bg) shadow-2xl">
       {activeChat ? (
@@ -131,29 +156,40 @@ if (!mounted) {
           chat={activeChat}
           currentUser={currentUser}
           onBack={() => {
-            setActiveChat(null);
-            loadChats();
+            window.history.back(); // Pops state cleanly
           }}
         />
       ) : (
         <ChatList
           chats={chats}
-          onSelectChat={(chat) => setActiveChat(chat)}
-          onOpenAddContact={() => setShowAddContact(true)}
-          onOpenProfile={() => setShowProfile(true)}
+          onSelectChat={handleSelectChat}
+          onOpenAddContact={handleOpenAddContact}
+          onOpenProfile={handleOpenProfile}
         />
       )}
 
       <AddContactModal
         isOpen={showAddContact}
-        onClose={() => setShowAddContact(false)}
-        onSuccess={loadChats}
+        onClose={() => {
+          if (window.history.state?.view === "modal") window.history.back();
+          else setShowAddContact(false);
+        }}
+        onSuccess={(newChat) => {
+          setShowAddContact(false);
+          loadChats();
+          if (newChat) {
+            handleSelectChat(newChat); 
+          }
+        }}
       />
 
       <ProfileModal
         user={currentUser}
         isOpen={showProfile}
-        onClose={() => setShowProfile(false)}
+        onClose={() => {
+          if (window.history.state?.view === "modal") window.history.back();
+          else setShowProfile(false);
+        }}
         onLogout={handleLogout}
         onUpdate={(updated) => {
           setCurrentUser(updated);

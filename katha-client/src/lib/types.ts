@@ -17,6 +17,7 @@ export interface ChatListItem {
   lastMessageType?: "TEXT" | "IMAGE";
   lastMessageAt?: string;
   isSaved?: boolean; 
+  unreadCount?: number;
 }
 
 export interface Message {

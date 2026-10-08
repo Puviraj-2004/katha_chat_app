@@ -8,7 +8,8 @@ import { X, UserPlus, Loader2 } from "lucide-react";
 interface AddContactModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onSuccess: (newChat?: any) => void; 
 }
 
 export default function AddContactModal({ isOpen, onClose, onSuccess }: AddContactModalProps) {
@@ -27,11 +28,26 @@ export default function AddContactModal({ isOpen, onClose, onSuccess }: AddConta
     try {
       const res = await api.post("/contacts/add", { email, customName });
       if (res.data.success) {
-        setStatusMessage({ type: "success", text: "Contact added successfully!" });
+        setStatusMessage({ type: "success", text: "Contact saved! Opening chat..." });
+
+        const newChat = {
+          conversationId: res.data.conversationId,
+          partnerId: res.data.targetUser.id,
+          displayName: customName.trim(),
+          email: res.data.targetUser.email,
+          username: res.data.targetUser.username,
+          avatarUrl: res.data.targetUser.avatarUrl,
+          lastMessage: "",
+          isSaved: true,
+          unreadCount: 0,
+        };
+
         setTimeout(() => {
-          onSuccess();
-          onClose();
-        }, 1200);
+          onSuccess(newChat); 
+          setEmail("");
+          setCustomName("");
+          setStatusMessage(null);
+        }, 600);
       }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
