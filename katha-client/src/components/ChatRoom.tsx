@@ -17,7 +17,6 @@ import {
   ShieldAlert,
   Ban,
 } from "lucide-react";
-import Image from "next/image";
 
 interface ChatRoomProps {
   chat: ChatListItem;
@@ -291,8 +290,8 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
             </button>
             <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand/10 text-sm font-bold text-brand">
               {chat.avatarUrl && failedAvatarUrl !== chat.avatarUrl ? (
-                
-                <Image
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
                   src={chat.avatarUrl}
                   alt={`${currentDisplayName}'s profile photo`}
                   className="w-full h-full object-cover"

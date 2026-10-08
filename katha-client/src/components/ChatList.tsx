@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
-import { ChatListItem } from "@/lib/types";
+import { ChatListItem, User } from "@/lib/types";
 import { MessageSquarePlus, UserCircle, Image as ImageIcon } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 
 interface ChatListProps {
   chats: ChatListItem[];
+  currentUser: User;
   onSelectChat: (chat: ChatListItem) => void;
   onOpenAddContact: () => void;
   onOpenProfile: () => void;
@@ -27,6 +28,7 @@ const formatChatTime = (dateStr?: string) => {
 
 export default function ChatList({
   chats,
+  currentUser,
   onSelectChat,
   onOpenAddContact,
   onOpenProfile,
@@ -54,10 +56,16 @@ export default function ChatList({
           </button>
           <button
             onClick={onOpenProfile}
-            className="p-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-brand/10 hover:text-brand transition"
+            className="w-9 h-9 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-brand/10 hover:text-brand transition overflow-hidden flex items-center justify-center"
             title="Profile"
+            aria-label="Open your profile"
           >
-            <UserCircle className="w-5 h-5" />
+            {currentUser.avatarUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <UserCircle className="w-5 h-5" />
+            )}
           </button>
         </div>
       </div>

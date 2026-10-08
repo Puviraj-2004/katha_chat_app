@@ -188,6 +188,7 @@ export default function Home() {
       ) : (
         <ChatList
           chats={chats}
+          currentUser={currentUser}
           onSelectChat={handleSelectChat}
           onOpenAddContact={handleOpenAddContact}
           onOpenProfile={handleOpenProfile}
