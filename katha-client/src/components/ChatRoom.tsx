@@ -245,19 +245,21 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-(--app-bg)">
-      {/* Top Header */}
-      <div className="px-4 py-3 border-b border-(--app-border) bg-(--app-surface) flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-(--app-bg)">
+      {/* Fixed WhatsApp-style chat header */}
+      <header className="sticky top-0 z-20 shrink-0 border-b border-(--app-border) bg-(--app-surface) shadow-sm">
+        <div className="flex min-h-16 items-center justify-between gap-2 px-3">
+        <div className="flex min-w-0 items-center gap-2">
           <button
             onClick={() => {
               onBack();
             }}
-            className="p-1 -ml-1 text-slate-400 hover:text-white"
+            className="-ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-black/5 hover:text-(--app-text) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand dark:text-slate-300 dark:hover:bg-white/10"
+            aria-label="Back to chats"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-            <div className="w-10 h-10 rounded-2xl bg-brand/10 text-brand font-bold flex items-center justify-center overflow-hidden">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand/10 text-sm font-bold text-brand">
             {chat.avatarUrl ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img src={chat.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -265,8 +267,8 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
               currentDisplayName.charAt(0).toUpperCase()
             )}
           </div>
-          <div>
-            <h4 className="font-bold text-sm leading-tight">{currentDisplayName}</h4> 
+          <div className="min-w-0">
+            <h4 className="truncate font-bold text-sm leading-tight">{currentDisplayName}</h4>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span
                 className={`w-2 h-2 rounded-full ${
@@ -280,21 +282,23 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
           </div>
         </div>
 
-        {/* Top Header Block Button */}
+        {/* Header action remains visible while the messages scroll. */}
           {!isBlocked && (
           <button
             onClick={() => setShowBlockModal(true)} // 👈 Open modern modal
-            className="p-2 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition"
-            title="Block User"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-red-500/10 hover:text-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500 dark:text-slate-300"
+            aria-label={`Block ${currentDisplayName}`}
+            title="Block user"
           >
-            <Ban className="w-4 h-4" />
+            <Ban className="w-5 h-5" />
           </button>
         )}
-      </div>
+        </div>
+      </header>
 
       {/* WhatsApp Style Unknown Sender Alert Banner */}
       {!isSaved && !isBlocked && (
-        <div className="p-3 bg-brand/5 border-b border-(--app-border) flex flex-col gap-2">
+        <div className="shrink-0 p-3 bg-brand/5 border-b border-(--app-border) flex flex-col gap-2">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <ShieldAlert className="w-4 h-4 text-brand" />
             <span>This sender is not in your contacts ({chat.email}).</span>
@@ -348,13 +352,13 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
 
       {/* Blocked Notification Banner */}
       {isBlocked && (
-        <div className="p-2.5 bg-red-500/10 border-b border-red-500/20 text-center text-xs text-red-400 font-medium">
+        <div className="shrink-0 p-2.5 bg-red-500/10 border-b border-red-500/20 text-center text-xs text-red-400 font-medium">
           You have blocked this contact. You cannot send or receive messages.
         </div>
       )}
 
 {/* Messages Feed */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 space-y-3">
         {messagesList.map((m, idx) => {
           const isMe = m.senderId === currentUser.id;
 
@@ -438,7 +442,7 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
       </div>
 
       {/* Input Bottom Bar (Disabled if Blocked) */}
-      <div className="p-3 border-t border-(--app-border) bg-(--app-surface)">
+      <div className="shrink-0 p-3 border-t border-(--app-border) bg-(--app-surface)">
         {isBlocked ? (
           <div className="text-center py-2 text-xs text-slate-400">
             Unblock to send messages
