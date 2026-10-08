@@ -474,6 +474,8 @@ export default function ChatRoom({ chat, currentUser, onBack }: ChatRoomProps) {
             <input
               ref={inputRef}
               type="text"
+              autoComplete="off"
+              enterKeyHint="send"
               placeholder="Type a message..."
               value={inputText}
               onChange={handleInputChange}

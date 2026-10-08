@@ -34,15 +34,20 @@
   }
 }
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   background-color: var(--app-bg);
   color: var(--app-text);
-  overflow-x: hidden;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
 /* Dynamic Viewport Height for Mobile PWA */
 .h-mobile-screen {
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
 }

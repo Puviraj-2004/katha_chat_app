@@ -40,6 +40,26 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Keep the app shell inside the visual viewport when a mobile keyboard opens.
+  // Some Android browsers keep 100dvh at the pre-keyboard height.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const syncViewportHeight = () => {
+      const height = viewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty("--app-viewport-height", `${Math.round(height)}px`);
+    };
+
+    syncViewportHeight();
+    viewport?.addEventListener("resize", syncViewportHeight);
+    window.addEventListener("resize", syncViewportHeight);
+
+    return () => {
+      viewport?.removeEventListener("resize", syncViewportHeight);
+      window.removeEventListener("resize", syncViewportHeight);
+      document.documentElement.style.removeProperty("--app-viewport-height");
+    };
+  }, []);
+
   const loadChats = useCallback(() => {
     api
       .get("/contacts/list")
