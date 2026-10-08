@@ -105,7 +105,12 @@ export default function Home() {
       alert("You have been logged out because another device logged in.");
     };
 
+    const onChatListUpdated = () => {
+      loadChats();
+    };
+
     socket.on("force_logout", onForceLogout);
+    socket.on("chat_list_updated", onChatListUpdated);
 
     let isSubscribed = true;
     api
@@ -122,8 +127,9 @@ export default function Home() {
     return () => {
       isSubscribed = false;
       socket.off("force_logout", onForceLogout);
+      socket.off("chat_list_updated", onChatListUpdated);
     };
-  }, [currentUser?.id, handleLogout]);
+  }, [currentUser?.id, handleLogout, loadChats]);
 
   if (!mounted) {
     return (

@@ -90,7 +90,12 @@ export const setupSocketHandlers = (io: Server) => {
         const targetSocket = onlineUsers.get(receiverId);
         if (targetSocket) {
           io.to(targetSocket).emit("new_message", newMsg);
+          io.to(targetSocket).emit("chat_list_updated");
         }
+
+        // Both participants need a fresh chat list so the latest preview,
+        // timestamp, ordering, and unread count appear immediately.
+        socket.emit("chat_list_updated");
 
         // 4. Acknowledgment to sender with real DB saved message
         if (ack) ack({ success: true, message: newMsg });
